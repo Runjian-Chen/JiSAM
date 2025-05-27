@@ -2,6 +2,12 @@
 
 Official code for CVPR 2025 paper [`[JiSAM: Alleviate Labeling Burden and Corner Case Problems in Autonomous Driving via Minimal Real-World Data]`](https://arxiv.org/abs/2503.08422). Developed based on [`[OpenPCDet]`](https://github.com/open-mmlab/OpenPCDet)
 
+## Highlights
+
+* Jittering Augmentation and Memory-based Sectorized Alignment to bridge simulation-to-real gap (JiSAM).
+* [JointTrainingDataset](./pcdet/datasets/joint_training_dataset/joint_training_dataset.py) to enable training with various datasets (any number you want), supporting future research on joint training with different LiDAR datasets.
+* [Domain-aware Backbone](./pcdet/models/backbones_3d/spconv_backbone_joint_training.py) follows the joint dataset to add separate input kernels for different datasets.
+
 ## Getting Started
 
 #### [Installation](./docs/INSTALL.md)
