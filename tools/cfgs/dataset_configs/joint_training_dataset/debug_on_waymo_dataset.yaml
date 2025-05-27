@@ -1,0 +1,3 @@
+WaymoDataset:
+    _BASE_CONFIG_: cfgs/dataset_configs/waymo_dataset.yaml
+    CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist']

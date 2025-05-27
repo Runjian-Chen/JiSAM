@@ -1,0 +1,7 @@
+ONCEDataset:
+    _BASE_CONFIG_: cfgs/dataset_configs/once_dataset.yaml
+    CLASS_NAMES: [ 'Car', 'Bus', 'Truck', 'Pedestrian', 'Cyclist' ]
+
+SimulationDataset:
+    _BASE_CONFIG_: cfgs/dataset_configs/simulation_dataset_once_lidar_5x_scale.yaml
+    LOAD_INTERVAL: 5

@@ -1,0 +1,352 @@
+DATA_CONFIG:
+    _JOINT_TRAINING_BASE_CONFIG_: cfgs/dataset_configs/joint_training_dataset/nuscenes_and_simulation_5x_scale_dataset_bigdata.yaml
+    DATASET: 'JointTrainingDataset'
+    NuScenesDataset:
+        POINT_CLOUD_RANGE: [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
+        LOAD_INTERVAL: 4
+        DATA_AUGMENTOR:
+            DISABLE_AUG_LIST: ['placeholder']
+            AUG_CONFIG_LIST:
+                - NAME: gt_sampling
+                  DB_INFO_PATH: ['nuscenes_dbinfos_10sweeps_withvelo_D4_bigdata.pkl']
+                  PREPARE: {
+                    filter_by_min_points: [
+                        'car:5','truck:5', 'construction_vehicle:5', 'bus:5', 'trailer:5',
+                        'barrier:5', 'motorcycle:5', 'bicycle:5', 'pedestrian:5', 'traffic_cone:5'
+                    ],
+                  }
+
+                  SAMPLE_GROUPS: [
+                      'car:2','truck:3', 'construction_vehicle:7', 'bus:4', 'trailer:6',
+                      'barrier:2', 'motorcycle:6', 'bicycle:6', 'pedestrian:2', 'traffic_cone:2'
+                  ]
+
+                  NUM_POINT_FEATURES: 5
+                  DATABASE_WITH_FAKELIDAR: False
+                  REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+                  LIMIT_WHOLE_SCENE: True
+
+                  SIMULATION_CLASS_FILTERING: ['bus', 'motorcycle']
+
+                - NAME: random_world_flip
+                  ALONG_AXIS_LIST: ['x', 'y']
+
+                - NAME: random_world_rotation
+                  WORLD_ROT_ANGLE: [-1.17809724, 1.17809724]
+
+                - NAME: random_world_scaling
+                  WORLD_SCALE_RANGE: [0.85, 1.15]
+
+                - NAME: random_world_translation
+                  NOISE_TRANSLATE_STD: [1.5, 1.5, 1.5]
+
+        DATA_PROCESSOR:
+            - NAME: mask_points_and_boxes_outside_range
+              REMOVE_OUTSIDE_BOXES: True
+            - NAME: shuffle_points
+              SHUFFLE_ENABLED: {
+                'train': True,
+                'test': True
+              }
+
+            - NAME: transform_points_to_voxels
+              VOXEL_SIZE: [0.075, 0.075, 0.2]
+              MAX_POINTS_PER_VOXEL: 10
+              MAX_NUMBER_OF_VOXELS: {
+                'train': 120000,
+                'test': 160000
+              }
+
+    SimulationDataset:
+        POINT_CLOUD_RANGE: [ -54.0, -54.0, -5.0, 54.0, 54.0, 3.0 ]
+        LOAD_INTERVAL: 5
+        ALIGN_TO_NUSCENES_LIDAR_COORDINATE: True
+        BALANCED_RESAMPLING: True
+
+        POINT_FEATURE_ENCODING: {
+            encoding_type: absolute_coordinates_encoding,
+            used_feature_list: [ 'x', 'y', 'z', 'timestamp'  ],
+            src_feature_list: [ 'x', 'y', 'z', 'intensity', 'timestamp' ],
+        }
+
+        DATA_AUGMENTOR:
+            DISABLE_AUG_LIST: [ 'placeholder' ]
+            AUG_CONFIG_LIST:
+                - NAME: gt_sampling
+                  DB_INFO_PATH: ['simulation_with_nuscenes_lidar_5x_scale_dbinfos_10_sweeps_train.pkl']
+                  PREPARE: {
+                      filter_by_min_points: [
+                          'car:5','truck:5', 'bus:5', 'motorcycle:5', 'cyclist:5', 'pedestrian:5'
+                      ],
+                  }
+
+                  SAMPLE_GROUPS: [
+                      'car:4','truck:4', 'bus:4', 'motorcycle:6', 'cyclist:6', 'pedestrian:2'
+                  ]
+
+                  NUM_POINT_FEATURES: 5
+                  DATABASE_WITH_FAKELIDAR: False
+                  REMOVE_EXTRA_WIDTH: [ 0.0, 0.0, 0.0 ]
+                  LIMIT_WHOLE_SCENE: True
+
+                - NAME: random_beam_range_jittering
+                  STD: 0.1
+                  ANGLE_STD: 0.01
+
+                - NAME: random_world_flip
+                  ALONG_AXIS_LIST: [ 'x', 'y' ]
+
+                - NAME: random_world_rotation
+                  WORLD_ROT_ANGLE: [ -1.17809724, 1.17809724 ]
+
+                - NAME: random_world_scaling
+                  WORLD_SCALE_RANGE: [ 0.85, 1.15 ]
+
+                - NAME: random_world_translation
+                  NOISE_TRANSLATE_STD: [ 1.5, 1.5, 1.5 ]
+
+
+        DATA_PROCESSOR:
+            - NAME: mask_points_and_boxes_outside_range
+              REMOVE_OUTSIDE_BOXES: True
+            - NAME: shuffle_points
+              SHUFFLE_ENABLED: {
+                  'train': True,
+                  'test': True
+              }
+
+            - NAME: transform_points_to_voxels
+              VOXEL_SIZE: [ 0.075, 0.075, 0.2 ]
+              MAX_POINTS_PER_VOXEL: 10
+              MAX_NUMBER_OF_VOXELS: {
+                  'train': 120000,
+                  'test': 160000
+              }
+
+TEST_DATASETS: ['NuScenesDataset']
+
+MODEL:
+    NAME: TransFusionJointTraining
+
+    DOMAIN_ALIGNMENT:
+        MEMORY_WARMUP: 4000
+        WEIGHT: 5.0
+        PARTITIONER:
+            R1: 10
+            R2: 70
+            NXY: 32
+            NZY: 1
+        NUM_DIR_BINS: 32
+        MEMORY_MOMENTUM: 0.99
+#        MEMORY_INIT_BY_ZERO: True
+        LOSS_FUNC: L2
+
+        BIDIRECTION_MEMORY_ALIGNMENT: True
+
+        FEATURE_MAP_STRIDE: 8
+        POINT_CLOUD_RANGE: [ -54.0, -54.0, -5.0, 54.0, 54.0, 3.0 ]
+
+        GRID_POOL:
+            GRID_SIZE: 6
+
+            DEEPER_FC_LAYERS: True
+
+            NAME: VectorPoolAggregationModuleMSG
+            NUM_GROUPS: 2
+            LOCAL_AGGREGATION_TYPE: voxel_random_choice
+            NUM_REDUCED_CHANNELS: 128
+            NUM_CHANNELS_OF_LOCAL_AGGREGATION: 32
+            MSG_POST_MLPS: [ 128 ]
+
+            GROUP_CFG_0:
+                NUM_LOCAL_VOXEL: [ 3, 3, 3 ]
+                MAX_NEIGHBOR_DISTANCE: 0.8
+                NEIGHBOR_NSAMPLE: 32
+                POST_MLPS: [ 64, 64 ]
+            GROUP_CFG_1:
+                NUM_LOCAL_VOXEL: [ 3, 3, 3 ]
+                MAX_NEIGHBOR_DISTANCE: 1.6
+                NEIGHBOR_NSAMPLE: 32
+                POST_MLPS: [ 64, 64 ]
+
+        FEATURE_SOURCE: [ 'bev' ]
+        FEATURE_CHANNELS: [ 512 ]
+        CLASS_MAPPING:
+            SimulationDataset:
+                'cyclist': 'bicycle'
+
+#    CONV_INPUT_ALIGNMENT:
+#        SOURCES: [ 'NuScenesDataset' ]
+#        TARGETS: [ 'SimulationDataset' ]
+#        WEIGHT: 1.0
+#        WARMUP: 4000
+
+    VFE:
+        NAME: MeanVFEJointTraining
+
+    BACKBONE_3D:
+        NAME: VoxelResBackBone8xJointTraining
+        USE_BIAS: False
+
+    MAP_TO_BEV:
+        NAME: HeightCompressionJointTraining
+        NUM_BEV_FEATURES: 256
+
+    BACKBONE_2D:
+        NAME: BaseBEVBackboneJointTraining
+        LAYER_NUMS: [5, 5]
+        LAYER_STRIDES: [1, 2]
+        NUM_FILTERS: [128, 256]
+        UPSAMPLE_STRIDES: [1, 2]
+        NUM_UPSAMPLE_FILTERS: [256, 256]
+        USE_CONV_FOR_NO_STRIDE: True
+
+
+    DENSE_HEAD:
+        NuScenesDataset:
+            CLASS_AGNOSTIC: False
+            NAME: TransFusionHead
+
+            USE_BIAS_BEFORE_NORM: False
+
+            NUM_PROPOSALS: 200
+            HIDDEN_CHANNEL: 128
+            NUM_CLASSES: 10
+            NUM_HEADS: 8
+            NMS_KERNEL_SIZE: 3
+            FFN_CHANNEL: 256
+            DROPOUT: 0.1
+            BN_MOMENTUM: 0.1
+            ACTIVATION: relu
+
+            NUM_HM_CONV: 2
+            SEPARATE_HEAD_CFG:
+                HEAD_ORDER: ['center', 'height', 'dim', 'rot', 'vel']
+                HEAD_DICT: {
+                    'center': {'out_channels': 2, 'num_conv': 2},
+                    'height': {'out_channels': 1, 'num_conv': 2},
+                    'dim': {'out_channels': 3, 'num_conv': 2},
+                    'rot': {'out_channels': 2, 'num_conv': 2},
+                    'vel': {'out_channels': 2, 'num_conv': 2},
+                }
+
+            TARGET_ASSIGNER_CONFIG:
+                FEATURE_MAP_STRIDE: 8
+                DATASET: nuScenes
+                GAUSSIAN_OVERLAP: 0.1
+                MIN_RADIUS: 2
+                HUNGARIAN_ASSIGNER:
+                    cls_cost: {'gamma': 2.0, 'alpha': 0.25, 'weight': 0.15}
+                    reg_cost: {'weight': 0.25}
+                    iou_cost: {'weight': 0.25}
+
+            LOSS_CONFIG:
+                LOSS_WEIGHTS: {
+                        'cls_weight': 1.0,
+                        'bbox_weight': 0.25,
+                        'hm_weight': 1.0,
+                        'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2]
+                    }
+                LOSS_CLS:
+                    use_sigmoid: True
+                    gamma: 2.0
+                    alpha: 0.25
+
+            POST_PROCESSING:
+                SCORE_THRESH: 0.0
+                POST_CENTER_RANGE: [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
+
+        SimulationDataset:
+            CLASS_AGNOSTIC: False
+            NAME: TransFusionHead
+
+            USE_BIAS_BEFORE_NORM: False
+
+            NUM_PROPOSALS: 200
+            HIDDEN_CHANNEL: 128
+            NUM_CLASSES: 6
+            NUM_HEADS: 8
+            NMS_KERNEL_SIZE: 3
+            FFN_CHANNEL: 256
+            DROPOUT: 0.1
+            BN_MOMENTUM: 0.1
+            ACTIVATION: relu
+
+            NUM_HM_CONV: 2
+            SEPARATE_HEAD_CFG:
+                HEAD_ORDER: [ 'center', 'height', 'dim', 'rot', 'vel' ]
+                HEAD_DICT: {
+                    'center': { 'out_channels': 2, 'num_conv': 2 },
+                    'height': { 'out_channels': 1, 'num_conv': 2 },
+                    'dim': { 'out_channels': 3, 'num_conv': 2 },
+                    'rot': { 'out_channels': 2, 'num_conv': 2 },
+                    'vel': { 'out_channels': 2, 'num_conv': 2 },
+                }
+
+            TARGET_ASSIGNER_CONFIG:
+                FEATURE_MAP_STRIDE: 8
+                DATASET: Simulation
+                GAUSSIAN_OVERLAP: 0.1
+                MIN_RADIUS: 2
+                HUNGARIAN_ASSIGNER:
+                    cls_cost: { 'gamma': 2.0, 'alpha': 0.25, 'weight': 0.15 }
+                    reg_cost: { 'weight': 0.25 }
+                    iou_cost: { 'weight': 0.25 }
+
+            LOSS_CONFIG:
+                LOSS_WEIGHTS: {
+                    'cls_weight': 1.0,
+                    'bbox_weight': 0.25,
+                    'hm_weight': 1.0,
+                    'code_weights': [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0 ]
+                }
+                LOSS_CLS:
+                    use_sigmoid: True
+                    gamma: 2.0
+                    alpha: 0.25
+
+            POST_PROCESSING:
+                SCORE_THRESH: 0.0
+                POST_CENTER_RANGE: [ -61.2, -61.2, -10.0, 61.2, 61.2, 10.0 ]
+
+    POST_PROCESSING:
+        RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
+        SCORE_THRESH: 0.1
+        OUTPUT_RAW_SCORE: False
+        EVAL_METRIC: kitti
+
+    DOMAIN_WEIGHT:
+        NuScenesDataset: 1.0
+        SimulationDataset: 0.1
+
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 4
+    NUM_EPOCHS: 100
+
+    OPTIMIZER: adam_onecycle
+    LR: 0.004
+    WEIGHT_DECAY: 0.01
+    MOMENTUM: 0.9
+    BETAS: [0.9, 0.999]
+
+    MOMS: [0.9, 0.8052631]
+    PCT_START: 0.4
+    DIV_FACTOR: 10
+    DECAY_STEP_LIST: [35, 45]
+    LR_DECAY: 0.1
+    LR_CLIP: 0.0000001
+
+    LR_WARMUP: False
+    WARMUP_EPOCH: 1
+
+    GRAD_NORM_CLIP: 35
+
+HOOK:
+    DisableAugmentationHook:
+        DISABLE_AUG_LIST: ['gt_sampling']
+        NUM_LAST_EPOCHS: 20
+
+    DisableJointTrainingHook:
+        NUM_LAST_EPOCHS: 2
+        TARGET_DATASET: [ 'NuScenesDataset' ]
+
