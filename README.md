@@ -26,7 +26,7 @@ Official code for CVPR 2025 paper [`[JiSAM: Alleviate Labeling Burden and Corner
 If you find this project useful in your research, please consider cite:
 
 ```
-@InProceedings{Chen_2025_CVPR,
+@InProceedings{JiSAM_CVPR_2025,
     author    = {Chen, Runjian and Shao, Wenqi and Zhang, Bo and Shi, Shaoshuai and Jiang, Li and Luo, Ping},
     title     = {JiSAM: Alleviate Labeling Burden and Corner Case Problems in Autonomous Driving via Minimal Real-World Data},
     booktitle = {Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR)},
@@ -35,7 +35,7 @@ If you find this project useful in your research, please consider cite:
     pages     = {6792-6801}
 }
 
-@article{chen2025jisam,
+@article{JiSAM_arxiv,
   title={JiSAM: Alleviate Labeling Burden and Corner Case Problems in Autonomous Driving via Minimal Real-World Data},
   author={Chen, Runjian and Shao, Wenqi and Zhang, Bo and Shi, Shaoshuai and Jiang, Li and Luo, Ping},
   journal={arXiv preprint arXiv:2503.08422},
