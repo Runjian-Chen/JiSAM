@@ -1,6 +1,6 @@
 # JiSAM (CVPR 2025)
 
-Official code for CVPR 2025 paper [`[JiSAM: Alleviate Labeling Burden and Corner Case Problems in Autonomous Driving via Minimal Real-World Data]`](https://arxiv.org/abs/2503.08422). Developed based on [`[OpenPCDet]`](https://github.com/open-mmlab/OpenPCDet)
+Official code for CVPR 2025 paper [`[JiSAM: Alleviate Labeling Burden and Corner Case Problems in Autonomous Driving via Minimal Real-World Data]`](https://openaccess.thecvf.com/content/CVPR2025/papers/Chen_JiSAM_Alleviate_Labeling_Burden_and_Corner_Case_Problems_in_Autonomous_CVPR_2025_paper.pdf). Developed based on [`[OpenPCDet]`](https://github.com/open-mmlab/OpenPCDet)
 
 ## Highlights
 
